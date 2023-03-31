@@ -22,7 +22,7 @@ def sumarizar_subnets(subnets):
 		print("--------- is subnet lookup ---------")
 		current_subnet = ordered_subnets[0]
 		for i, subnet in enumerate(ordered_subnets[1:]):
-			print (subnet, current_subnet)
+			#print (subnet, current_subnet)
 			if subnet.subnet_of(current_subnet) and subnet is not current_subnet:
 				print(subnet, "is in", current_subnet)  
 				ordered_subnets.remove(subnet) 		
