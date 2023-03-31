@@ -1,3 +1,4 @@
+
 import ipaddress
 
 import tkinter as tk
@@ -8,36 +9,48 @@ from os.path import isfile, join
 
 import openpyxl
 
-def sumarizar_subredes(subredes):
-    ordered_subnets = sorted(subredes)
-    print("Input:")
-    print(ordered_subnets)
-    current_subnet = ordered_subnets[0]
-    flag = 1
+def sumarizar_subnets(subnets):
+	ordered_subnets = sorted(subnets)
+	print("Input:")
+	print(ordered_subnets)
+	
+	flag = 1
 
-    while flag == 1:
-    	summarized = set()
-    	current_subnet = ordered_subnets[0]
-    	flag = 0
-    	print("--------- Pass ---------")
-    	for subred in ordered_subnets[1:]:
-    	    if subred.network_address == current_subnet.broadcast_address + 1 and subred.prefixlen == current_subnet.prefixlen:
-    	        print("Contiguous networks: ", str(current_subnet), " = ", str(subred))
-    	        current_subnet = subred.supernet()
-    	        print("Supernet: ", str(current_subnet))
-    	        flag = 1
-    	    else:
-    	        summarized.add(current_subnet)
-    	        current_subnet = subred
-    	print("Qty of networks: ", len(summarized))
-    	print("Pass sumarization: ", summarized)
-    	print("")
-    	ordered_subnets = list(summarized)
-    	ordered_subnets = sorted(ordered_subnets)
+	while flag == 1:
+		summarized = set()
+		flag = 0
+		print("--------- is subnet lookup ---------")
+		current_subnet = ordered_subnets[0]
+		for i, subnet in enumerate(ordered_subnets[1:]):
+			print (subnet, current_subnet)
+			if subnet.subnet_of(current_subnet) and subnet is not current_subnet:
+				print(subnet, "is in", current_subnet)  
+				ordered_subnets.remove(subnet) 		
+				current_subnet = ordered_subnets[i+1]
+			current_subnet = subnet
+		print("--------- Contiguous lookup ---------")
+		current_subnet = ordered_subnets[0]
+		for subnet in ordered_subnets[1:]:
+			if subnet.network_address == current_subnet.broadcast_address + 1 and subnet.prefixlen == current_subnet.prefixlen:
+				print("Contiguous networks: ", str(current_subnet), " = ", str(subnet))
+				current_subnet = subnet.supernet()
+				print("Supernet: ", str(current_subnet))
+				summarized.add(current_subnet)
+				flag = 1
+			else:
+				summarized.add(current_subnet)
+				current_subnet = subnet
 
-    summarized.add(current_subnet)	#Last member
-    summarized = [str(address) for address in summarized]
-    return list(summarized)
+		ordered_subnets = summarized
+		ordered_subnets = sorted(ordered_subnets)
+		print("Qty of networks: ", len(ordered_subnets))
+		print("Contiguous sumarization: ", ordered_subnets)
+		print("")
+
+	summarized.add(current_subnet)	#Last member
+	summarized = sorted(summarized)
+	summarized = [str(address) for address in summarized]
+	return list(summarized)
 
 
 
@@ -53,7 +66,7 @@ if __name__ == "__main__":
 	subnets = []
 	subnets = [c.value for c in sheet['A']]
 	subnets_ip = [ipaddress.IPv4Network(subnet) for subnet in subnets]
-	summary = sumarizar_subredes(subnets_ip)
+	summary = sumarizar_subnets(subnets_ip)
 	print("Total length of the input: ", len(subnets_ip))
 	print("Summary length: ", len(summary))
 	print("Output: ") 
