@@ -6,6 +6,7 @@ from tkinter import filedialog
 import os
 from os import listdir
 from os.path import isfile, join
+import sys
 
 import openpyxl
 
@@ -22,32 +23,46 @@ def sumarizar_subnets(subnets):
 		print("--------- is subnet lookup ---------")
 		current_subnet = ordered_subnets[0]
 		for i, subnet in enumerate(ordered_subnets[1:]):
-			#print (subnet, current_subnet)
+			#print (current_subnet, subnet)
 			if subnet.subnet_of(current_subnet) and subnet is not current_subnet:
 				print(subnet, "is in", current_subnet)  
 				ordered_subnets.remove(subnet) 		
-				current_subnet = ordered_subnets[i+1]
+				try:
+					current_subnet = ordered_subnets[i+1]
+				except IndexError as e:
+					#pass
+					print(e, i)
+					print("items: ", ordered_subnets)
+					print("lenght: ", len(ordered_subnets))
+					#sys.exit()
 			current_subnet = subnet
 		print("--------- Contiguous lookup ---------")
 		current_subnet = ordered_subnets[0]
 		for subnet in ordered_subnets[1:]:
-			if subnet.network_address == current_subnet.broadcast_address + 1 and subnet.prefixlen == current_subnet.prefixlen:
-				print("Contiguous networks: ", str(current_subnet), " = ", str(subnet))
-				current_subnet = subnet.supernet()
-				print("Supernet: ", str(current_subnet))
-				summarized.add(current_subnet)
-				flag = 1
+			
+			if (subnet.network_address == current_subnet.broadcast_address + 1) and (subnet.prefixlen == current_subnet.prefixlen):
+				#print (current_subnet, subnet)
+				if subnet.supernet() == current_subnet.supernet():
+					print("Contiguous networks: ", str(current_subnet), " <-> ", str(subnet))
+					current_subnet = subnet.supernet()
+					print("Supernet: ", str(current_subnet))
+					summarized.add(current_subnet)
+					flag = 1
+				else:
+					summarized.add(current_subnet)
+					current_subnet = subnet
 			else:
 				summarized.add(current_subnet)
 				current_subnet = subnet
 
+		summarized.add(current_subnet)	#Last member
 		ordered_subnets = summarized
 		ordered_subnets = sorted(ordered_subnets)
 		print("Qty of networks: ", len(ordered_subnets))
 		print("Contiguous sumarization: ", ordered_subnets)
 		print("")
 
-	summarized.add(current_subnet)	#Last member
+	#summarized.add(current_subnet)	#Last member
 	summarized = sorted(summarized)
 	summarized = [str(address) for address in summarized]
 	return list(summarized)
